@@ -1,0 +1,12 @@
+name: Build Vita
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: vitasdk/vitasdk:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$VITASDK/share/vita.toolchain.cmake -DCMAKE_BUILD_TYPE=ReleaseGeneric
+      - name: Build
+        run: cmake --build build -j4
