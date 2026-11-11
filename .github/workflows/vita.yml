@@ -7,17 +7,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Restore build cache
+        id: cache
         uses: actions/cache/restore@v4
         with:
           path: build
           key: build-${{ github.run_id }}
           restore-keys: build-
+      - name: Refresh cached files
+        if: steps.cache.outputs.cache-hit != '' || steps.cache.outputs.cache-matched-key != ''
+        run: find build -type f -exec touch {} +
       - name: Check vitaShaRK
         run: |
           if [ ! -f $VITASDK/arm-vita-eabi/lib/libvitashark.a ]; then vdpm vitashark || true; fi
-          ls $VITASDK/arm-vita-eabi/lib | grep -i shark || echo "vitashark introuvable"
+          ls $VITASDK/arm-vita-eabi/lib | grep -i -E "shark|ShaccCgExt|taihen" || echo "libs introuvables"
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$VITASDK/share/vita.toolchain.cmake -DCMAKE_BUILD_TYPE=ReleaseGeneric -DCMAKE_CXX_FLAGS="-DJPH_PLATFORM_LINUX -include $GITHUB_WORKSPACE/vita_compat/vita_shim.h -I$GITHUB_WORKSPACE/vita_compat" -DCMAKE_CXX_STANDARD_LIBRARIES="-lvitaGL -lvitashark -lmathneon -lSceShaccCg_stub -lSceKernelDmacMgr_stub -lSceGxm_stub -lSceDisplay_stub -lSceSysmodule_stub -lSceCtrl_stub -lSceTouch_stub -lSceMotion_stub -lSceAppMgr_stub -lSceAudio_stub -lSceAudioIn_stub -lSceCommonDialog_stub -lSceIme_stub -lSceHid_stub"
+        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$VITASDK/share/vita.toolchain.cmake -DCMAKE_BUILD_TYPE=ReleaseGeneric -DCMAKE_CXX_FLAGS="-DJPH_PLATFORM_LINUX -include $GITHUB_WORKSPACE/vita_compat/vita_shim.h -I$GITHUB_WORKSPACE/vita_compat" -DCMAKE_CXX_STANDARD_LIBRARIES="-lvitaGL -lvitashark -lSceShaccCgExt -ltaihen_stub -lmathneon -lSceShaccCg_stub -lSceKernelDmacMgr_stub -lSceGxm_stub -lSceDisplay_stub -lSceSysmodule_stub -lSceCtrl_stub -lSceTouch_stub -lSceMotion_stub -lSceAppMgr_stub -lSceAudio_stub -lSceAudioIn_stub -lSceCommonDialog_stub -lSceIme_stub -lSceHid_stub"
       - name: Build
         run: cmake --build build -j4 -- -k
       - name: Save build cache
