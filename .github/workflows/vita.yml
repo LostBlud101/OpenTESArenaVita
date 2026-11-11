@@ -7,6 +7,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$VITASDK/share/vita.toolchain.cmake -DCMAKE_BUILD_TYPE=ReleaseGeneric
+        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$VITASDK/share/vita.toolchain.cmake -DCMAKE_BUILD_TYPE=ReleaseGeneric -DCMAKE_CXX_FLAGS="-DJPH_PLATFORM_LINUX"
       - name: Build
-        run: cmake --build build -j4
+        run: cmake --build build -j4 -- -k
