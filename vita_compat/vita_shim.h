@@ -4,7 +4,21 @@
 #ifdef __cplusplus
 #include <stddef.h>
 #include <stdlib.h>
-extern "C" int posix_memalign(void **, size_t, size_t);
+#include <malloc.h>
+#include <errno.h>
+
+static inline int vita_posix_memalign(void **out, size_t alignment, size_t size)
+{
+	void *p = memalign(alignment, size);
+	if (p == NULL)
+	{
+		return ENOMEM;
+	}
+	*out = p;
+	return 0;
+}
+
+#define posix_memalign vita_posix_memalign
 #endif
 
 #ifndef alloca
