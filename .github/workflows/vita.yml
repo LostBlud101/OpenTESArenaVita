@@ -12,8 +12,12 @@ jobs:
           path: build
           key: build-${{ github.run_id }}
           restore-keys: build-
+      - name: Check vitaShaRK
+        run: |
+          if [ ! -f $VITASDK/arm-vita-eabi/lib/libvitashark.a ]; then vdpm vitashark || true; fi
+          ls $VITASDK/arm-vita-eabi/lib | grep -i shark || echo "vitashark introuvable"
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$VITASDK/share/vita.toolchain.cmake -DCMAKE_BUILD_TYPE=ReleaseGeneric -DCMAKE_CXX_FLAGS="-DJPH_PLATFORM_LINUX -include $GITHUB_WORKSPACE/vita_compat/vita_shim.h -I$GITHUB_WORKSPACE/vita_compat" -DCMAKE_CXX_STANDARD_LIBRARIES="-lvitaGL -lmathneon -lSceShaccCg_stub -lSceKernelDmacMgr_stub -lSceGxm_stub -lSceDisplay_stub -lSceSysmodule_stub -lSceCtrl_stub -lSceTouch_stub -lSceMotion_stub -lSceAppMgr_stub -lSceAudio_stub -lSceAudioIn_stub -lSceCommonDialog_stub -lSceIme_stub -lSceHid_stub"
+        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$VITASDK/share/vita.toolchain.cmake -DCMAKE_BUILD_TYPE=ReleaseGeneric -DCMAKE_CXX_FLAGS="-DJPH_PLATFORM_LINUX -include $GITHUB_WORKSPACE/vita_compat/vita_shim.h -I$GITHUB_WORKSPACE/vita_compat" -DCMAKE_CXX_STANDARD_LIBRARIES="-lvitaGL -lvitashark -lmathneon -lSceShaccCg_stub -lSceKernelDmacMgr_stub -lSceGxm_stub -lSceDisplay_stub -lSceSysmodule_stub -lSceCtrl_stub -lSceTouch_stub -lSceMotion_stub -lSceAppMgr_stub -lSceAudio_stub -lSceAudioIn_stub -lSceCommonDialog_stub -lSceIme_stub -lSceHid_stub"
       - name: Build
         run: cmake --build build -j4 -- -k
       - name: Save build cache
@@ -22,3 +26,20 @@ jobs:
         with:
           path: build
           key: build-${{ github.run_id }}
+      - name: Package vpk
+        run: |
+          if [ -f build/otesa ]; then
+            cd build
+            vita-elf-create otesa otesa.velf
+            vita-make-fself -c otesa.velf eboot.bin
+            vita-mksfoex -s TITLE_ID=OTSA00001 "OpenTESArena" param.sfo
+            vita-pack-vpk -s param.sfo -b eboot.bin OpenTESArena.vpk
+          else
+            echo "Pas de binaire otesa, pas de vpk"
+          fi
+      - name: Upload vpk
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenTESArena-vpk
+          path: build/OpenTESArena.vpk
+          if-no-files-found: warn
